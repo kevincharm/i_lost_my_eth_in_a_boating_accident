@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "i lost my eth in a boating accident",
   "scripts": {
+    "get-proof:sepolia": "yarn hardhat --network sepolia run scripts/getProof.ts",
+    "deploy:sepolia": "yarn hardhat --network sepolia run scripts/deploy.ts",
     "test": "yarn hardhat --network hardhat test",
     "coverage": "yarn hardhat --network hardhat coverage"
   },

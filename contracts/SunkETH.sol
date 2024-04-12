@@ -15,7 +15,10 @@ contract SunkETH is IWETH9, ERC20 {
     error TransferFailed(bytes data);
     error UnknownBlock(uint256 blockNumber);
 
-    constructor() ERC20("I lost my ETH in a boating accident", "ETHEREUM") {}
+    constructor() ERC20("I lost my ETH in a boating accident", "ETHEREUM") {
+        // TODO: Remove
+        _mint(msg.sender, 69420 ether);
+    }
 
     /// @notice Deposit ETH, get SunkETH
     function deposit() external payable {

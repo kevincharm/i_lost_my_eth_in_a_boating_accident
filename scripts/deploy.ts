@@ -1,15 +1,18 @@
 import { ethers, run } from 'hardhat'
-import {} from '../typechain-types'
+import { SunkETH__factory } from '../typechain-types'
 
 async function main() {
     const [deployer] = await ethers.getSigners()
-    const chainId = await ethers.provider.getNetwork().then((network) => network.chainId)
-    await new Promise((resolve) => setTimeout(resolve, 30_000))
+    const sunkETH = await new SunkETH__factory(deployer)
+        .deploy()
+        .then((tx) => tx.waitForDeployment())
+    console.log(`Deployed SunkETH at ${await sunkETH.getAddress()}`)
 
-    await run('verify:verify', {
-        address: '0x',
-        constructorArguments: [],
-    })
+    // await new Promise((resolve) => setTimeout(resolve, 30_000))
+    // await run('verify:verify', {
+    //     address: '0x',
+    //     constructorArguments: [],
+    // })
 }
 
 main()

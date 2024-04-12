@@ -1,0 +1,8 @@
+[package]
+name = "sunketh_circuit"
+type = "bin"
+authors = [""]
+compiler_version = ">=0.18.0"
+
+[dependencies]
+noir_trie_proofs = { git = "https://github.com/aragonzkresearch/noir-trie-proofs", tag = "main", directory = "lib" }

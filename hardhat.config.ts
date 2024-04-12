@@ -34,19 +34,9 @@ const config: HardhatUserConfig = {
                 count: 10,
             },
         },
-        base: {
-            chainId: 8453,
-            url: process.env.BASE_URL as string,
-            accounts: [process.env.MAINNET_PK as string],
-        },
-        baseSepolia: {
-            chainId: 84532,
-            url: process.env.BASE_SEPOLIA_URL as string,
-            accounts: [process.env.MAINNET_PK as string],
-        },
-        degen: {
-            chainId: 666666666,
-            url: process.env.DEGEN_URL as string,
+        sepolia: {
+            chainId: 11155111,
+            url: process.env.SEPOLIA_URL as string,
             accounts: [process.env.MAINNET_PK as string],
         },
     },

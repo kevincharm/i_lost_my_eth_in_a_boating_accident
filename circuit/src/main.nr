@@ -28,28 +28,6 @@ fn main(
     let is_storage_valid = storage_proof.verify_storage_root(storage_root);
     assert(is_storage_valid, "invalid storage proof");
 
-    // Get the index of where the last proof node starts at
-    let l = MAX_TRIE_NODE_LENGTH * (state_proof.depth - 1);
-    // Copy the last proof node into account_leaf
-    let mut account_leaf = [0 as u8; MAX_TRIE_NODE_LENGTH];
-    for i in 0..MAX_TRIE_NODE_LENGTH {
-        account_leaf[i] = state_proof.proof[l + i];
-    }
-    let account_leaf_rlp: RLP_List<2> = rlp::decode1(account_leaf);
-    let mut account_state = [0 as u8; MAX_TRIE_NODE_LENGTH];
-    for i in 0..MAX_TRIE_NODE_LENGTH {
-        if (i < account_leaf_rlp.length[1]) {
-            account_state[i] = account_leaf[account_leaf_rlp.offset[1]];
-        }
-    }
-    // TODO: Fix dis
-    // let account_state_rlp: RLP_List<4> = rlp::decode1(account_state);
-    // let storage_root_len = account_state_rlp.length[2];
-    // assert(storage_root_len == 32, "Invalid storage root length");
-    // for i in 0..32 {
-    //     assert(storage_root[i] == account_state[account_state_rlp.offset[2] + i], "Storage root mismatch");
-    // }
-
     // Compute a nullifier for use in contract
     let mut nullifier_preimage: [u8; 64] = [0; 64];
     for i in 0..64 {

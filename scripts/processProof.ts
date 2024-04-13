@@ -70,7 +70,39 @@ export function toNargoProverToml(
     return toml.concat('\n').join('\n')
 }
 
-function toHexArrayString(arr: number[]) {
+export function toCombinedNargoProverToml(
+    s: number[],
+    state: {
+        root: number[]
+        processedProof: ProcessedProof
+        fieldNames: ProcessedProofTomlNames
+    },
+    storage: {
+        root: number[]
+        processedProof: ProcessedProof
+        fieldNames: ProcessedProofTomlNames
+    },
+) {
+    const toml = []
+    toml.push(`s = ${toHexArrayString(s)}`)
+    toml.push(`${state.fieldNames.root} = ${toHexArrayString(state.root)}`)
+    toml.push(`${storage.fieldNames.root} = ${toHexArrayString(storage.root)}`)
+    // state proof
+    toml.push(`\n[${state.fieldNames.proof}]`)
+    toml.push(`key = ${toHexArrayString(state.processedProof.key)}`)
+    toml.push(`proof = ${toHexArrayString(state.processedProof.proof)}`)
+    toml.push(`depth = 0x${state.processedProof.depth.toString(16).padStart(2, '0')}`)
+    toml.push(`value = ${toHexArrayString(state.processedProof.value)}`)
+    // storage proof
+    toml.push(`\n[${storage.fieldNames.proof}]`)
+    toml.push(`key = ${toHexArrayString(storage.processedProof.key)}`)
+    toml.push(`proof = ${toHexArrayString(storage.processedProof.proof)}`)
+    toml.push(`depth = 0x${storage.processedProof.depth.toString(16).padStart(2, '0')}`)
+    toml.push(`value = ${toHexArrayString(storage.processedProof.value)}`)
+    return toml.concat('\n').join('\n')
+}
+
+export function toHexArrayString(arr: number[]) {
     return `[\n${arr.map((v) => `    0x${v.toString(16).padStart(2, '0')}`).join(',\n')}\n]`
 }
 

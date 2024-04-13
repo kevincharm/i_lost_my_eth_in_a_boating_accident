@@ -1,8 +1,8 @@
 use dep::std;
-use dep::noir_trie_proofs::const::{MAX_ACCOUNT_STATE_LENGTH, MAX_STORAGE_VALUE_LENGTH};
+use dep::noir_trie_proofs::const::{MAX_ACCOUNT_STATE_LENGTH, MAX_STORAGE_VALUE_LENGTH, MAX_TRIE_NODE_LENGTH};
 use dep::noir_trie_proofs::storage_proof::StorageProof;
 use dep::noir_trie_proofs::trie_proof::TrieProof;
-use dep::noir_trie_proofs::rlp;
+use dep::noir_trie_proofs::{rlp, rlp::RLP_List};
 
 global DEPTH8_MAX: Field = 4256;
 
@@ -14,23 +14,41 @@ fn main(
     storage_proof: TrieProof<32, DEPTH8_MAX, MAX_STORAGE_VALUE_LENGTH>
 ) -> pub [u8; 32] {
     let unspendable_address = std::hash::sha256(s);
+    let mut storage_slot_preimage = [0 as u8; 64];
+    for i in 0..20 {
+        storage_slot_preimage[12 + i] = unspendable_address[12 + i];
+    }
+    let storage_key: [u8; 32] = std::hash::keccak256(storage_slot_preimage, 64);
+    for i in 0..20 {
+        assert(storage_key[i] == storage_proof.key[i], "Storage key mismatch");
+    }
 
     let is_state_valid = state_proof.verify_state_root(state_root);
     assert(is_state_valid, "invalid state proof");
     let is_storage_valid = storage_proof.verify_storage_root(storage_root);
     assert(is_storage_valid, "invalid storage proof");
 
-    // TODO: Split state_proof's last element so we can RLP-decode it
-    // -> account_state == RLP.decode( RLP.decode(state_proof[-1])[-1] ) == [nonce, balance, storage_root, codehash]
-    // -> account_state[2] == storage_root
-    // let state_proof_rlp = rlp::decode1(state_proof.proof);
-    // let state_leaf_offset = state_proof_rlp.offset[state_proof_rlp.num_fields - 1];
-    // let state_leaf_len = state_proof_rlp.length[state_proof_rlp.num_fields - 1];
-    // let state_leaf: [u8; 104] = [0; 104];
-    // for i in 0..state_leaf_len {
-    //     //
+    // Get the index of where the last proof node starts at
+    let l = MAX_TRIE_NODE_LENGTH * (state_proof.depth - 1);
+    // Copy the last proof node into account_leaf
+    let mut account_leaf = [0 as u8; MAX_TRIE_NODE_LENGTH];
+    for i in 0..MAX_TRIE_NODE_LENGTH {
+        account_leaf[i] = state_proof.proof[l + i];
+    }
+    let account_leaf_rlp: RLP_List<2> = rlp::decode1(account_leaf);
+    let mut account_state = [0 as u8; MAX_TRIE_NODE_LENGTH];
+    for i in 0..MAX_TRIE_NODE_LENGTH {
+        if (i < account_leaf_rlp.length[1]) {
+            account_state[i] = account_leaf[account_leaf_rlp.offset[1]];
+        }
+    }
+    // TODO: Fix dis
+    // let account_state_rlp: RLP_List<4> = rlp::decode1(account_state);
+    // let storage_root_len = account_state_rlp.length[2];
+    // assert(storage_root_len == 32, "Invalid storage root length");
+    // for i in 0..32 {
+    //     assert(storage_root[i] == account_state[account_state_rlp.offset[2] + i], "Storage root mismatch");
     // }
-    // assert(state_proof.proof[-1] == rlp(nonce,balance,storage_root,codehash))
 
     // Compute a nullifier for use in contract
     let mut nullifier_preimage: [u8; 64] = [0; 64];

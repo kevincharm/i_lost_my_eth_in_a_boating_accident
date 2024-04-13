@@ -1,42 +1,92 @@
 import { ethers } from 'hardhat'
 import { getStorageKey } from './getStorageKey'
-import { solidityPacked } from 'ethers'
+import { RpcGetProofResult } from './RpcGetProofResult'
+import { processProof, toNargoProverToml } from './processProof'
+import { getBytes } from 'ethers'
+import fs from 'node:fs'
+import path from 'node:path'
 
+const BLOCK_NUMBER = 5689270
 const CONTRACT_ADDRESS = '0x36090F95c63114A172973Af47653B7946315cc06'
-const STORAGE_KEYS = [getStorageKey(0n, '0x97248C0ddC583537a824A7ad5Ee92D5f4525bcAa')]
+const STORAGE_KEY = getStorageKey(0n, '0x97248C0ddC583537a824A7ad5Ee92D5f4525bcAa')
+
+const MAX_DEPTH = 8
+const MAX_TRIE_NODE_LENGTH = 532
+const MAX_ACCOUNT_STATE_LENGTH = 134
+const MAX_STORAGE_VALUE_LENGTH = 32
 
 async function main() {
-    const { number: blockNumber } = await ethers.provider.getBlock('latest').then((block) => block!)
+    // const { number: blockNumber } = await ethers.provider.getBlock('latest').then((block) => block!)
     const block = await ethers.provider.send('eth_getBlockByNumber', [
-        `0x${blockNumber.toString(16)}`,
+        `0x${BLOCK_NUMBER.toString(16)}`,
         false,
     ])
     console.log('Block')
     console.log(block)
     console.log('===\n')
 
-    const storage = await ethers.provider.getStorage(CONTRACT_ADDRESS, STORAGE_KEYS[0])
+    const storageValue = await ethers.provider.getStorage(CONTRACT_ADDRESS, STORAGE_KEY)
     console.log('Storage value')
-    console.log(BigInt(storage))
+    console.log(storageValue)
     console.log('===\n')
 
-    const proof = await ethers.provider.send('eth_getProof', [
+    const proof: RpcGetProofResult = await ethers.provider.send('eth_getProof', [
         CONTRACT_ADDRESS,
-        STORAGE_KEYS,
+        [STORAGE_KEY],
         block.number,
     ])
-    // const proof = await ethers.provider.send('eth_getProof', [
-    //     '0xb16f35c0ae2912430dac15764477e179d9b9ebea',
-    //     [solidityPacked(['uint256'], [1])],
-    //     'latest',
-    // ])
     console.log('Proof')
     console.log(JSON.stringify(proof, null, 2))
     console.log('===\n')
 
+    /// STATE /////////////////////////////////////////////////////////////////
+    // RLP-decode last node of accountProof
     const accountStateRlp = ethers.decodeRlp(proof.accountProof.slice(-1)[0])
-    console.log(accountStateRlp)
-    console.log(ethers.decodeRlp((accountStateRlp as string[])[1]))
+    const accountStateValue = getBytes(accountStateRlp[1] as string)
+
+    // Process state proof
+    const processedStateProof = processProof(
+        proof.accountProof,
+        proof.address,
+        accountStateValue,
+        MAX_DEPTH,
+        MAX_TRIE_NODE_LENGTH,
+        MAX_ACCOUNT_STATE_LENGTH,
+    )
+    // This is the Prover.toml for state proof
+    const stateProverToml = toNargoProverToml(
+        Array.from(getBytes(block.stateRoot)),
+        processedStateProof,
+        {
+            root: 'state_root',
+            proof: 'state_proof',
+        },
+    )
+    // fs.writeFileSync(path.resolve(__dirname, 'state_Prover.toml'), stateProverToml, {
+    //     encoding: 'utf-8',
+    // })
+
+    /// STORAGE ///////////////////////////////////////////////////////////////
+    const processedStorageProof = processProof(
+        proof.storageProof[0].proof,
+        proof.storageProof[0].key,
+        proof.storageProof[0].value,
+        MAX_DEPTH,
+        MAX_TRIE_NODE_LENGTH,
+        MAX_STORAGE_VALUE_LENGTH,
+    )
+    // This is the Prover.toml for storage proof
+    const storageProverToml = toNargoProverToml(
+        Array.from(getBytes(proof.storageHash)),
+        processedStorageProof,
+        {
+            root: 'storage_root',
+            proof: 'storage_proof',
+        },
+    )
+    // fs.writeFileSync(path.resolve(__dirname, 'storage_Prover.toml'), storageProverToml, {
+    //     encoding: 'utf-8',
+    // })
 }
 
 main()

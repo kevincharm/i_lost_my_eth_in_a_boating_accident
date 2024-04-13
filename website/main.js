@@ -6,28 +6,7 @@ const circuit ={"noir_version":"TODO"}
 import { SunkEthInteracter } from './src/SunkEthInteracter';
 //const sunkETHABI =["function decimals() view returns (uint8)","function symbol() view returns (string)","function balanceOf(address owner) view returns (uint256)","function transfer(address to, uint amount) returns (bool)"]
 const sunkEthContractAddress = "0x455410A0bE0A365564a385bF4Da97e8e1Cc16290"
-
-const setup = async () => {
-  await Promise.all([
-    import("@noir-lang/noirc_abi").then(module => 
-      module.default(new URL("@noir-lang/noirc_abi/web/noirc_abi_wasm_bg.wasm", import.meta.url).toString())
-    ),
-    import("@noir-lang/acvm_js").then(module => 
-      module.default(new URL("@noir-lang/acvm_js/web/acvm_js_bg.wasm", import.meta.url).toString())
-    )
-  ]);
-}
-//-----------------functions------------------
-function getBrowserProvider() {
-  try {
-    return new ethers.BrowserProvider(window.ethereum)
-  } catch (error) {
-    console.warn("couldnt connect to browser wallet")
-    console.warn(error)
-    return false
-  }
-}
-
+window.ethers = ethers
 /**
  * 
  * @param {ethers.provider} provider 
@@ -41,6 +20,17 @@ async function getSigner(provider) {
     return false
   }
 }
+
+  //-----------------functions------------------
+  function getBrowserProvider() {
+    try {
+      return new ethers.BrowserProvider(window.ethereum)
+    } catch (error) {
+      console.warn("couldnt connect to browser wallet")
+      console.warn(error)
+      return false
+    }
+  }
 
 
 async function connectWallet() {
@@ -76,6 +66,10 @@ async function setUserBalance() {
   document.querySelectorAll(".userTokenBalance").forEach((element)=>{
     element.innerText = formattedBalance
   })
+
+  document.querySelectorAll(".useSendTokenInput").forEach((element)=>{
+    element.max = formattedBalance
+  })
 }
 
 
@@ -83,22 +77,28 @@ async function setUserBalance() {
 async function showDeposits() {
   const {sunkEthInteracter} = await connectWallet()
   const depositsListEl = document.getElementById("depositsList")
+  depositsListEl.innerHTML = ""
   const ticker = await sunkEthInteracter.sunkEthContract.symbol()
 
   const deposits = await sunkEthInteracter.getDepositFromLocalStorage()
-
+  
   for(const address in deposits) {
     const deposit = deposits[address]
     const formattedAmount = await sunkEthInteracter.formatAmount(deposit.amount)
 
     const depositItemEl = document.createElement("li")
-    depositItemEl.innerText = `${formattedAmount} ${ticker} at ${address}`
-    const claimButton = document.createElement("button")
-    claimButton.innerText = "claim"
-    claimButton.onclick = async ()=>await withdrawHandler(deposit.nullifierData)
-    depositItemEl.append(claimButton)
+    depositItemEl.innerText = ` ${formattedAmount} ${ticker} at ${address}`
+    if (deposit.isClaimed) {
+      depositItemEl.className += " strikeThrough"
+    } else {
+      const claimButton = document.createElement("button")
+      claimButton.innerText = "unshield"
+      claimButton.onclick = async ()=>await unshieldHandler(deposit.nullifierData)
+      depositItemEl.prepend(claimButton)
+
+    }
+
     depositsListEl.append(depositItemEl)
-    console.log(depositItemEl)
 
   }
 
@@ -106,25 +106,55 @@ async function showDeposits() {
 
 
 //-----------------handlers------------------
+async function unwrapEthHandler() {
+  const {sunkEthInteracter} = await connectWallet()
+
+  const unwrapAmountInput = document.getElementById("unwrapAmountInput")
+  const amount = await sunkEthInteracter.parseAmount(unwrapAmountInput.value)
+
+  const tx  = await sunkEthInteracter.unwrapEth(amount)
+  console.log(await tx.wait(1))
+  await refreshUiValues()
+
+  
+}
+
+async function wrapEthHandler() {
+  const {sunkEthInteracter} = await connectWallet()
+
+  const wrapAmountInput = document.getElementById("wrapAmountInput")
+  //const amount = await sunkEthInteracter.parseAmount(wrapAmountInput.value)
+  const amount = ethers.parseEther(wrapAmountInput.value)
+  const tx  = await sunkEthInteracter.wrapEth(amount)
+  console.log(await tx.wait(1))
+  await refreshUiValues()
+
+  
+}
+
 async function shieldTokenBtnHandler() {
   const {sunkEthInteracter} = await connectWallet()
 
   //get amount from ui
-  const amountInputEl = document.getElementById("depositAmountInput")
+  const amountInputEl = document.getElementById("shieldAmountInput")
   const amount  = sunkEthInteracter.parseAmount(amountInputEl.value)
 
-  const secret = await sunkEthInteracter.shieldTokens(amount) 
+  const tx = await sunkEthInteracter.shieldTokens(amount) 
+  console.log(await tx.wait(1))
+  await refreshUiValues()
 }
 
 async function connectWalletHandler() {
   await connectWallet()
 }
 
-async function withdrawHandler(nullifierData) {
+async function unshieldHandler(nullifierData) {
   const {sunkEthInteracter} = await connectWallet()
-  await sunkEthInteracter.unShieldTokens(nullifierData)
-
+  const tx  = await sunkEthInteracter.unShieldTokens(nullifierData)
+  console.log(await tx.wait(1))
+  await refreshUiValues()
 }
+
 
 
 
@@ -132,11 +162,18 @@ function setEventListeners() {
   const connectWalletBtn = document.getElementById("connectWalletBtn")
   connectWalletBtn.addEventListener("click",async (event)=>await connectWalletHandler())
 
+  const wrapBtn = document.getElementById("wrapBtn")
+  wrapBtn.addEventListener("click",async ()=>await wrapEthHandler())
+
+  const unwrapBtn = document.getElementById("unwrapBtn")
+  unwrapBtn.addEventListener("click",async ()=>await unwrapEthHandler())
+
   const shieldBtn = document.getElementById("shieldBtn")
-  shieldBtn.addEventListener("click", ()=>shieldTokenBtnHandler())
+  shieldBtn.addEventListener("click",async ()=>await shieldTokenBtnHandler())
+
 }
 
-async function populateUiValues() {
+async function refreshUiValues() {
   await setTickerUi()
   await setUserBalance()
   await showDeposits()
@@ -148,35 +185,9 @@ async function main() {
   console.log(`using circuit noir version: ${circuit.noir_version}, full obj: `,circuit)
   console.log(`using sunkenEthContractAddress: ${sunkEthContractAddress}`)
   setEventListeners()
-  await populateUiValues()
+  await refreshUiValues()
 
 
 
 }
 window.onload = main
-// function display(container, msg) {
-//   const c = document.getElementById(container);
-//   const p = document.createElement('p');
-//   p.textContent = msg;
-//   c.appendChild(p);
-// }
-
-// document.getElementById('submitGuess').addEventListener('click', async () => {
-//   try {
-//     // here's where love happens
-//     const backend = new BarretenbergBackend(circuit);
-//     const noir = new Noir(circuit, backend);
-//     const x = parseInt(document.getElementById('guessInput').value);
-
-//     const input = { x, y: 2 };
-//     await setup(); // let's squeeze our wasm inits here
-
-//     display('logs', 'Generating proof... ⌛');
-//     const proof = await noir.generateProof(input); //generateProof in docs
-//     display('logs', 'Generating proof... ✅');
-//     display('results', proof.proof);
-//   } catch(err) {
-//     console.log(err)
-//     display("logs", "Oh 💔 Wrong guess")
-//   }
-// });

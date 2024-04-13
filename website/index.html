@@ -12,6 +12,10 @@
         padding: 10px;
         word-wrap: break-word;
     }
+
+    .strikeThrough { 
+      text-decoration: line-through;
+    }
   </style>
 </head>
 <body>
@@ -21,17 +25,7 @@
 
   </div>
   <div>
-    user balance: <span class="userTokenBalance"></span> <span class="ticker"></span>
-  </div>
-
-  <div>
-    <label>
-      <input id="depositAmountInput" placeholder="amount" type="number" min="0"/>
-
-    </label>
-    <button id="shieldBtn">shield</button>
-
-
+    balance: <span class="userTokenBalance"></span> <span class="ticker"></span>
   </div>
 
   <div>
@@ -45,9 +39,29 @@
   </div>
 
   <div>
-    <ul id="depositsList">
+    <label>
+      <input id="unwrapAmountInput" class="useSendTokenInput" placeholder="amount" type="number" min="0" step="0.00001"/>
 
-    </ul>
+    </label>
+    <button id="unwrapBtn">unwrap eth</button>
+
+
+  </div>
+
+  <div>
+    <label>
+      <input id="shieldAmountInput" class="useSendTokenInput" placeholder="amount" type="number" min="0" step="0.00001"/>
+    </label>
+    <button id="shieldBtn">shield</button>
+  </div>
+
+
+  <div>
+    <br> 
+    <label>Deposits in local storage
+      <ul id="depositsList">
+      </ul>
+    </label>
   </div>
 
 

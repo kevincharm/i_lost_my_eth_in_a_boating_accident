@@ -1,30 +1,39 @@
-import { BigNumber, ethers } from 'ethers'
+import {ethers } from 'ethers'
 
-export interface EthereumJSONRPCBlock {
-    hash: string
-    parentHash: string
-    sha3Uncles: string
-    miner: string
-    stateRoot: string
-    transactionsRoot: string
-    receiptsRoot: string
-    logsBloom: string
-    difficulty: string
-    number: string
-    gasLimit: string
-    gasUsed: string
-    timestamp: string
-    extraData: string
-    mixHash: string
-    nonce: string
-    baseFeePerGas: string
-    withdrawalsRoot: string
-}
+// export interface EthereumJSONRPCBlock {
+//     hash: string
+//     parentHash: string
+//     sha3Uncles: string
+//     miner: string
+//     stateRoot: string
+//     transactionsRoot: string
+//     receiptsRoot: string
+//     logsBloom: string
+//     difficulty: string
+//     number: string
+//     gasLimit: string
+//     gasUsed: string
+//     timestamp: string
+//     extraData: string
+//     mixHash: string
+//     nonce: string
+//     baseFeePerGas: string
+//     withdrawalsRoot: string
+// }
 
-export async function getBlockWithRLP(hash: string, provider: ethers.providers.JsonRpcProvider) {
-    const block: EthereumJSONRPCBlock = await provider.send('eth_getBlockByHash', [hash, false])
+/**
+ * 
+ * @param {string} hash 
+ * @param {ethers.providers.JsonRpcProvider} provider 
+ * @returns 
+ */
+export async function getBlockWithRLP(hash, provider) {
+    //TODO typtypedefedef not the JSONRPCBlock but is ethers block
+    /**@typedef {ethers.Block} block */ 
+    const block = await provider.send('eth_getBlockByHash', [hash, false])
 
     // https://github.com/ethereum/go-ethereum/blob/master/core/types/block.go#L79C7-L79C7
+
     const blockHeaderRLPList = [
         block.parentHash,
         block.sha3Uncles,
@@ -41,11 +50,12 @@ export async function getBlockWithRLP(hash: string, provider: ethers.providers.J
         block.extraData,
         block.mixHash,
         block.nonce,
-        block.baseFeePerGas /** EIP-1559 */,
-        block.withdrawalsRoot /** EIP-4895 */,
-        // block.excessDataGas /** EIP-4844 */
-        // block.dataGasUsed /** EIP-4844 */
-    ].map((bytesLike: string) => {
+        block.baseFeePerGas, /** EIP-1559 */
+        block.withdrawalsRoot, /** EIP-4895 */
+        block.blobGasUsed,  /** EIP-4844 */
+        block.excessBlobGas, /** EIP-4844 */
+        block.parentBeaconBlockRoot, /** EIP-4844 */
+    ].map((bytesLike, i) => {
         if (!bytesLike.toLowerCase().startsWith('0x')) {
             throw new Error(`Not a hex string: ${bytesLike}`)
         }
@@ -61,16 +71,26 @@ export async function getBlockWithRLP(hash: string, provider: ethers.providers.J
         } else if (bytesLike.length % 2) {
             // odd
             const evenByteLen = (bytesLike.slice(2).length + 1) / 2
-            return ethers.utils.hexZeroPad(bytesLike, evenByteLen)
+            //zeroPadValue nolonger accepts hex string in v6 but it does return hex string :/
+            return ethers.zeroPadValue(ethers.toBeArray(bytesLike), evenByteLen)
         } else {
             return bytesLike
         }
     })
 
-    const blockHeaderRLP = ethers.utils.RLP.encode(blockHeaderRLPList)
+    const blockHeaderRLP = ethers.encodeRlp(blockHeaderRLPList)
 
     return {
         block,
         blockHeaderRLP,
     }
 }
+
+
+const providerUrl = ""
+const provider = new ethers.JsonRpcProvider(providerUrl);
+const blockHash = (await provider.getBlock()).hash
+const blockWifRLP = (await getBlockWithRLP(blockHash, provider))
+console.log({blockHash, blockWifRLP})
+console.log(blockHash)
+console.log(ethers.keccak256(ethers.toBeArray(blockWifRLP.blockHeaderRLP)))

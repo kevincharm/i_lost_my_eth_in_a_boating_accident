@@ -3,8 +3,7 @@ import { Noir } from '@noir-lang/noir_js';
 import {assert, ethers, wordlists} from 'ethers'
 //import circuit from "../circuit/target/circuit.json"
 const circuit ={"noir_version":"TODO"}
-import { ProofBuilder } from './src/ProofBuilder';
-import sunkETHABI  from "../exported/abi/SunkETH.json"  assert { type: 'json' };
+import { SunkEthInteracter } from './src/SunkEthInteracter';
 //const sunkETHABI =["function decimals() view returns (uint8)","function symbol() view returns (string)","function balanceOf(address owner) view returns (uint256)","function transfer(address to, uint amount) returns (bool)"]
 const sunkEthContractAddress = "0x455410A0bE0A365564a385bF4Da97e8e1Cc16290"
 
@@ -45,67 +44,33 @@ async function getSigner(provider) {
 
 
 async function connectWallet() {
+  //TODO maybe make more efficient by not creating a new provider and etc every time we need it
   const provider = getBrowserProvider()
   const signer = await getSigner(provider)
-  const sunkEthContract = new ethers.Contract(sunkEthContractAddress, sunkETHABI, provider);
-  const sunkEthContractWithSigner = sunkEthContract.connect(signer)
+
+  const sunkEthInteracter = new SunkEthInteracter(sunkEthContractAddress, signer)
+
+  
 
   window.provider = provider
-  window.sunkEthContractWithSigner = sunkEthContractWithSigner
   window.signer = signer
-  return {signer, provider, sunkEthContractWithSigner}
-}
-
-async function depositTokens(amount) {
-
-  //TODO check if user not accidently sending to address that already has a ballance
-  //to prevent using a address twice (and thus potentually burning funds)
-  const {sunkEthContractWithSigner} = await connectWallet()
-  const secret = crypto.getRandomValues(new Uint8Array(32))
-  const {proofInputs, burnAddress} = ProofBuilder.getProofInputs(secret)
-
-
-
-  //burn it!! yay
-  sunkEthContractWithSigner.transfer(burnAddress, amount)
-
-  localStorage.setItem(ethers.getAddress(burnAddress), JSON.stringify(proofInputs));
-
-  return secret
-
-  //TODO save proofInputs (contains secret) to local storage
-}
-
-async function isClaimed(nullifier) {
-  console.log(nullifier)
-  const {sunkEthContractWithSigner} = await connectWallet()
-
-  return await sunkEthContractWithSigner.nullifiers(nullifier)
-}
-
-async function withdraw(depositAddress) {
-  //secret, rlp
-  //wow zk magic here
-  const {sunkEthContractWithSigner} = await connectWallet()
-  const amount = await sunkEthContractWithSigner.balanceOf(depositAddress)
-  const proofInputs = JSON.parse( localStorage.getItem(depositAddress))
-  const stateRoot = (await provider.getBlock()).stateRoot
-  console.log({proofInputs, amount,stateRoot })
+  window.sunkEthInteracter = sunkEthInteracter
+  return {signer, provider, sunkEthInteracter}
 }
 
 //-----------------ui------------------
 async function setTickerUi() {
-  const {sunkEthContractWithSigner} = await connectWallet()
-  const ticker = await sunkEthContractWithSigner.symbol()
+  const {sunkEthInteracter} = await connectWallet()
+  const ticker = await sunkEthInteracter.sunkEthContract.symbol()
   document.querySelectorAll(".ticker").forEach((element)=>{
     element.innerText = ticker
   })
 }
 
 async function setUserBalance() {
-  const {signer, sunkEthContractWithSigner} = await connectWallet()
-  const userBalance = await sunkEthContractWithSigner.balanceOf(signer.address)
-  const units = await sunkEthContractWithSigner.decimals()
+  const {signer, sunkEthInteracter} = await connectWallet()
+  const userBalance = await sunkEthInteracter.sunkEthContract.balanceOf(signer.address)
+  const units = await sunkEthInteracter.sunkEthContract.decimals()
   const formattedBalance = ethers.formatUnits(userBalance,units)
 
   document.querySelectorAll(".userTokenBalance").forEach((element)=>{
@@ -116,50 +81,49 @@ async function setUserBalance() {
 
 
 async function showDeposits() {
-  const {sunkEthContractWithSigner} = await connectWallet()
+  const {sunkEthInteracter} = await connectWallet()
   const depositsListEl = document.getElementById("depositsList")
-  const ticker = await sunkEthContractWithSigner.symbol()
-  const units = await sunkEthContractWithSigner.decimals()
-  for (const key in localStorage) {
-    if (ethers.isAddress(key)) {
-      const proofInputs = JSON.parse(localStorage.getItem(key))
-      //it was converted to a plain obj
-      const nullifier = new Uint8Array(Object.entries(proofInputs.nullifierBytes).map((x)=>x[1]))
-      if (!await isClaimed(nullifier)) {
+  const ticker = await sunkEthInteracter.sunkEthContract.symbol()
 
-      
-        const depositAddress = ethers.getAddress(key)
-      
+  const deposits = await sunkEthInteracter.getDepositFromLocalStorage()
 
-        const amount = await sunkEthContractWithSigner.balanceOf(depositAddress)
-        const formattedAmount = ethers.formatUnits(amount, units)
-        const depositItemEl = document.createElement("li")
-        depositItemEl.innerText = `${formattedAmount} ${ticker} at ${depositAddress}`
-        const claimButton = document.createElement("button")
-        claimButton.innerText = "claim"
-        claimButton.onclick = async ()=>await withdraw(key)
-        depositItemEl.append(claimButton)
-        depositsListEl.append(depositItemEl)
-      }
-    }
+  for(const address in deposits) {
+    const deposit = deposits[address]
+    const formattedAmount = await sunkEthInteracter.formatAmount(deposit.amount)
+
+    const depositItemEl = document.createElement("li")
+    depositItemEl.innerText = `${formattedAmount} ${ticker} at ${address}`
+    const claimButton = document.createElement("button")
+    claimButton.innerText = "claim"
+    claimButton.onclick = async ()=>await withdrawHandler(deposit.nullifierData)
+    depositItemEl.append(claimButton)
+    depositsListEl.append(depositItemEl)
+    console.log(depositItemEl)
+
   }
 
 }
 
+
 //-----------------handlers------------------
-async function depositTokenBtnHandler() {
-  const {sunkEthContractWithSigner} = await connectWallet()
+async function shieldTokenBtnHandler() {
+  const {sunkEthInteracter} = await connectWallet()
 
   //get amount from ui
-  const units = await sunkEthContractWithSigner.decimals()
   const amountInputEl = document.getElementById("depositAmountInput")
-  const amount  = ethers.parseUnits(amountInputEl.value, units)
+  const amount  = sunkEthInteracter.parseAmount(amountInputEl.value)
 
-  const secret = await depositTokens(amount) 
+  const secret = await sunkEthInteracter.shieldTokens(amount) 
 }
 
 async function connectWalletHandler() {
   await connectWallet()
+}
+
+async function withdrawHandler(nullifierData) {
+  const {sunkEthInteracter} = await connectWallet()
+  await sunkEthInteracter.unShieldTokens(nullifierData)
+
 }
 
 
@@ -168,8 +132,8 @@ function setEventListeners() {
   const connectWalletBtn = document.getElementById("connectWalletBtn")
   connectWalletBtn.addEventListener("click",async (event)=>await connectWalletHandler())
 
-  const depositBtn = document.getElementById("depositBtn")
-  depositBtn.addEventListener("click", ()=>depositTokenBtnHandler())
+  const shieldBtn = document.getElementById("shieldBtn")
+  shieldBtn.addEventListener("click", ()=>shieldTokenBtnHandler())
 }
 
 async function populateUiValues() {

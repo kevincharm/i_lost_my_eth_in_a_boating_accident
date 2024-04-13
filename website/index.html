@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<head>
+  <style>
+    .outer {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .inner {
+        width: 45%;
+        border: 1px solid black;
+        padding: 10px;
+        word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <script type="module" src="/main.js"></script>
+  <div>
+    <button id="connectWalletBtn">connect wallet</button>
+
+  </div>
+  <div>
+    user balance: <span class="userTokenBalance"></span> <span class="ticker"></span>
+  </div>
+
+  <div>
+    <label>
+      <input id="depositAmountInput" type="number" min="0"/>
+
+    </label>
+    <button id="depositBtn">deposit</button>
+
+
+  </div>
+
+  <div>
+    <ul id="depositsList">
+
+    </ul>
+  </div>
+
+
+
+</body>
+</html>

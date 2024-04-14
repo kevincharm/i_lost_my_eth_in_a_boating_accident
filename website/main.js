@@ -5,7 +5,13 @@ import {assert, ethers, wordlists} from 'ethers'
 const circuit ={"noir_version":"TODO"}
 import { SunkEthInteracter } from './src/SunkEthInteracter';
 //const sunkETHABI =["function decimals() view returns (uint8)","function symbol() view returns (string)","function balanceOf(address owner) view returns (uint256)","function transfer(address to, uint amount) returns (bool)"]
-const sunkEthContractAddress = "0x455410A0bE0A365564a385bF4Da97e8e1Cc16290"
+import {processProof} from '../scripts/processProof'
+import { getStorageKey } from '../scripts/getStorageKey'
+
+window.processProof = processProof
+window.getStorageKey = getStorageKey
+
+const sunkEthContractAddress = "0xCa842A2Da8767d4F6cE016270c2cf43d5812f251"
 window.ethers = ethers
 /**
  * 
@@ -92,7 +98,7 @@ async function showDeposits() {
       depositItemEl.className += " strikeThrough"
     } else {
       const claimButton = document.createElement("button")
-      claimButton.innerText = "unshield"
+      claimButton.innerText = "remint"
       claimButton.onclick = async ()=>await unshieldHandler(deposit.nullifierData)
       depositItemEl.prepend(claimButton)
 

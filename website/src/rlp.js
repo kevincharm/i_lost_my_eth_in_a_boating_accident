@@ -80,17 +80,14 @@ export async function getBlockWithRLP(hash, provider) {
 
     const blockHeaderRLP = ethers.encodeRlp(blockHeaderRLPList)
 
-    return {
-        block,
-        blockHeaderRLP,
-    }
+    return  blockHeaderRLP
 }
 
 
-const providerUrl = ""
-const provider = new ethers.JsonRpcProvider(providerUrl);
-const blockHash = (await provider.getBlock()).hash
-const blockWifRLP = (await getBlockWithRLP(blockHash, provider))
-console.log({blockHash, blockWifRLP})
-console.log(blockHash)
-console.log(ethers.keccak256(ethers.toBeArray(blockWifRLP.blockHeaderRLP)))
+// const providerUrl = "https://sepolia.drpc.org"
+// const provider = new ethers.JsonRpcProvider(providerUrl);
+// const blockHash = (await provider.getBlock()).hash
+// const blockHeaderRLP = await getBlockWithRLP(blockHash, provider)
+// console.log(blockHeaderRLP)
+// console.log(blockHash)
+// console.log(ethers.keccak256(ethers.toBeArray(blockHeaderRLP)))

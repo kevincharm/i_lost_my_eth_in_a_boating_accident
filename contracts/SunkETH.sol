@@ -4,10 +4,13 @@ pragma solidity 0.8.25;
 import {IWETH9} from "./interfaces/IWETH9.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {RLPReader} from "./lib/RLPReader.sol";
+import {UltraVerifier} from "./plonk_vk-nullifierTest.sol"; 
 
 contract SunkETH is IWETH9, ERC20 {
     using RLPReader for bytes;
     using RLPReader for RLPReader.RLPItem;
+
+    address public verifierAddress;// = address(0x4f0d440B16B0a7B204B4d8815B4E90F6a405b4b3);
 
     /// @notice Proof-of-sunken-boat nullifier
     mapping(bytes32 nullifier => bool) public nullifiers;
@@ -15,7 +18,8 @@ contract SunkETH is IWETH9, ERC20 {
     error TransferFailed(bytes data);
     error UnknownBlock(uint256 blockNumber);
 
-    constructor() ERC20("I lost my ETH in a boating accident", "ETHEREUM") {
+    constructor(address _verifierAddress) ERC20("I lost my ETH in a boating accident", "ETHEREUM") {
+        verifierAddress = _verifierAddress;
         // TODO: Remove
         _mint(msg.sender, 69420 ether);
     }
@@ -53,23 +57,35 @@ contract SunkETH is IWETH9, ERC20 {
         bytes calldata snarkProof
     ) external {
         // Verify block header RLP against known blockhash
-        RLPReader.RLPItem[] memory blockHeader = blockHeaderRLP.readList();
-        uint256 blockNum = blockHeader[8].readUint256();
-        bytes32 blkhash = blockhash(blockNum);
-        if (blkhash == 0) {
-            revert UnknownBlock(blockNum);
-        }
-        if (blkhash != keccak256(blockHeaderRLP)) {
-            revert InvalidBlockHeader(
-                blkhash,
-                keccak256(blockHeaderRLP),
-                blockHeaderRLP
-            );
-        }
-        // Read out state root from block header
-        // TODO: Double check that this actually works or if bytes32 needs to
-        // decoded differently
-        bytes32 stateRoot = bytes32(blockHeader[3].readUint256());
-        // TODO: Verify SNARK proof against wad, stateRoot, nullifier
+        // RLPReader.RLPItem[] memory blockHeader = blockHeaderRLP.readList();
+        // uint256 blockNum = blockHeader[8].readUint256();
+        // bytes32 blkhash = blockhash(blockNum);
+        // if (blkhash == 0) {
+        //     revert UnknownBlock(blockNum);
+        // }
+        // if (blkhash != keccak256(blockHeaderRLP)) {
+        //     revert InvalidBlockHeader(
+        //         blkhash,
+        //         keccak256(blockHeaderRLP),
+        //         blockHeaderRLP
+        //     );
+        // }
+        // // Read out state root from block header
+        // // TODO: Double check that this actually works or if bytes32 needs to
+        // // decoded differently
+        // bytes32 stateRoot = bytes32(blockHeader[3].readUint256());
+        // // TODO: Verify SNARK proof against wad, stateRoot, nullifier
+        
+        
+        
+        //TODO check if can do cleaner
+        bytes32[] memory publicInputs = new bytes32[](0);
+        publicInputs[0] = nullifier;
+
+        UltraVerifier verifier = UltraVerifier(verifierAddress);
+
+        require(verifier.verify(snarkProof, publicInputs), "Invalid proof");
+        //nullifiers[nullifier] = true;
+        _mint(msg.sender, wad);
     }
 }

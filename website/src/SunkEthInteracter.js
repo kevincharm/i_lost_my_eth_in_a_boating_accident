@@ -1,7 +1,10 @@
 import { ethers } from 'ethers'
-import sunkETHABI from "../../exported/abi/SunkETH.json"  assert { type: 'json' };
+import sunkETHForgeOut from "../../out/SunkETH.sol/SunkETH.json"  assert { type: 'json' };
+const sunkETHABI = sunkETHForgeOut.abi
 import { BarretenbergBackend } from '@noir-lang/backend_barretenberg';
 import { Noir } from '@noir-lang/noir_js';
+import {getStateProofs} from "./getStateProofs"
+import {getBlockWithRLP} from './rlp.js'
 
 //TODO replace with the real circuit
 import circuit from "../../nullifierCircuitTest/target/nullifier.json"
@@ -15,10 +18,11 @@ export class SunkEthInteracter {
      * @param {ethers.Signer} signer 
      */
     constructor(sunkEthContractAddress, signer = undefined) {
+        this.signer = signer
+        this.provider = signer.provider
         this.sunkEthContract = new ethers.Contract(sunkEthContractAddress, sunkETHABI, signer.provider);
         if (signer) {
             this.sunkEthContractWithSigner = this.sunkEthContract.connect(signer)
-
         }
 
 
@@ -97,6 +101,16 @@ export class SunkEthInteracter {
     }
 
     async unShieldTokens(nullifierData) {
+        const burnAddress = ethers.hexlify(nullifierData.burnAddressBytes)
+        console.log(this.signer)
+        const storageProof = await getStateProofs(burnAddress, this.provider)
+        console.log(storageProof)
+        const block = await this.provider.getBlock()
+        const blockHeaderRLP = await getBlockWithRLP(block.hash, this.provider)
+        console.log(blockHeaderRLP)
+        console.log("real blockhash: ", block.hash)
+        console.log("rlp reconstructec blockhash: ", ethers.keccak256(ethers.toBeArray(blockHeaderRLP)))
+
         await SunkEthInteracter.setupWasm()
         const backend = new BarretenbergBackend(circuit);
         const noir = new Noir(circuit, backend);
@@ -113,7 +127,16 @@ export class SunkEthInteracter {
         console.log ("is verified (local): ",await noir.verifyProof(proof))
         console.log(nullifierData)
         console.warn("TODO implement")
-        const tx = {}
+
+        // uint256 wad,
+        // bytes32 nullifier,
+        // bytes calldata blockHeaderRLP,
+        // bytes calldata snarkProof
+        const amount = await this.sunkEthContract.balanceOf(burnAddress)
+        console.log("args: ", {amount, pubNullifier, blockHeaderRLP, proof:proof.proof})
+        //console.log("args arr: ", JSON.stringify(amount, pubNullifier, blockHeaderRLP, proof.proof))
+        console.log(amount, ethers.hexlify(pubNullifier), blockHeaderRLP,ethers.hexlify( proof.proof))
+        const tx = await this.sunkEthContractWithSigner.remint(amount, ethers.hexlify(pubNullifier), blockHeaderRLP,ethers.hexlify( proof.proof))
         return tx
     }
 

@@ -15,6 +15,7 @@
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@noir-lang/backend_barretenberg": "0.25.0",
     "@noir-lang/noir_js": "0.25.0",
+    "assert": "^2.1.0",
     "circomlibjs": "^0.1.7",
     "ethers": "^6.11.1"
   }

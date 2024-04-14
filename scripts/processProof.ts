@@ -72,6 +72,7 @@ export function toNargoProverToml(
 
 export function toCombinedNargoProverToml(
     s: number[],
+    balance: number[],
     state: {
         root: number[]
         processedProof: ProcessedProof
@@ -85,6 +86,7 @@ export function toCombinedNargoProverToml(
 ) {
     const toml = []
     toml.push(`s = ${toHexArrayString(s)}`)
+    toml.push(`balance = ${toHexArrayString(balance)}`)
     toml.push(`${state.fieldNames.root} = ${toHexArrayString(state.root)}`)
     toml.push(`${storage.fieldNames.root} = ${toHexArrayString(storage.root)}`)
     // state proof

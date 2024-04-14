@@ -136,6 +136,7 @@ async function main() {
 
     const proverToml = toCombinedNargoProverToml(
         Array.from(getBytes(SECRET_KEY)),
+        processedStorageProof.value,
         {
             root: Array.from(getBytes(block.stateRoot)),
             processedProof: processedStateProof,

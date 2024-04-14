@@ -8,6 +8,7 @@ global DEPTH8_MAX: Field = 4256;
 
 fn main(
     s: [u8; 32],
+    balance: pub [u8; 32],
     state_root: pub [u8; 32],
     state_proof: TrieProof<20, DEPTH8_MAX, MAX_ACCOUNT_STATE_LENGTH>,
     storage_root: [u8; 32],
@@ -21,6 +22,9 @@ fn main(
     let storage_key: [u8; 32] = std::hash::keccak256(storage_slot_preimage, 64);
     for i in 0..20 {
         assert(storage_key[i] == storage_proof.key[i], "Storage key mismatch");
+    }
+    for i in 0..32 {
+        assert(balance[i] == storage_proof.value[i], "Balance mismatch");
     }
 
     let is_state_valid = state_proof.verify_state_root(state_root);

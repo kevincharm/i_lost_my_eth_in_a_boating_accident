@@ -11,7 +11,7 @@ import { getStorageKey } from '../scripts/getStorageKey'
 window.processProof = processProof
 window.getStorageKey = getStorageKey
 
-const sunkEthContractAddress = "0xCa842A2Da8767d4F6cE016270c2cf43d5812f251"
+const sunkEthContractAddress = "0x46CFe55bf2E5A02B738f5BBdc1bDEE9Dd22b5d39"
 window.ethers = ethers
 /**
  * 

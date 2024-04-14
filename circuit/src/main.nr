@@ -11,7 +11,7 @@ fn main(
     balance: pub [u8; 32],
     state_root: pub [u8; 32],
     state_proof: TrieProof<20, DEPTH8_MAX, MAX_ACCOUNT_STATE_LENGTH>,
-    storage_root: [u8; 32],
+    storage_root: pub [u8; 32],
     storage_proof: TrieProof<32, DEPTH8_MAX, MAX_STORAGE_VALUE_LENGTH>
 ) -> pub [u8; 32] {
     let unspendable_address = std::hash::sha256(s);

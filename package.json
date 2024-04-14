@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "i lost my eth in a boating accident",
   "scripts": {
+    "burn:sepolia": "yarn hardhat --network sepolia run scripts/burn.ts",
     "get-proof:sepolia": "yarn hardhat --network sepolia run scripts/getProof.ts",
+    "remint:sepolia": "yarn hardhat --network sepolia run scripts/remint.ts",
     "deploy:sepolia": "yarn hardhat --network sepolia run scripts/deploy.ts",
     "test": "yarn hardhat --network hardhat test",
     "coverage": "yarn hardhat --network hardhat coverage"
@@ -42,6 +44,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0",
-    "@openzeppelin/contracts-upgradeable": "^5.0.0"
+    "@openzeppelin/contracts-upgradeable": "^5.0.0",
+    "toml": "^3.0.0"
   }
 }

@@ -1,6 +1,12 @@
 [
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "verifier_",
+        "type": "address"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
@@ -91,6 +97,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -131,6 +142,11 @@
       }
     ],
     "name": "UnknownBlock",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VerificationFailed",
     "type": "error"
   },
   {
@@ -344,13 +360,45 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "wad",
+        "name": "balance",
         "type": "uint256"
       },
       {
         "internalType": "bytes32",
         "name": "nullifier",
         "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "storageRootOffset",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes",
+            "name": "key",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "proof",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "depth",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "value",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct SunkETH.TrieProof",
+        "name": "stateProof",
+        "type": "tuple"
       },
       {
         "internalType": "bytes",
@@ -376,6 +424,67 @@
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "stateRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "nullifier",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "storageRootOffset",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes",
+            "name": "key",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "proof",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "depth",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "value",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct SunkETH.TrieProof",
+        "name": "stateProof",
+        "type": "tuple"
+      }
+    ],
+    "name": "toPublicInputs",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "out",
+        "type": "bytes32[]"
       }
     ],
     "stateMutability": "view",
@@ -445,6 +554,19 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "verifier",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

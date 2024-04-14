@@ -1,26 +1,20 @@
 import { ethers } from 'hardhat'
-import { getStorageKey } from './getStorageKey'
 import { RpcGetProofResult } from './RpcGetProofResult'
 import { processProof, toCombinedNargoProverToml, toNargoProverToml } from './processProof'
-import { getAddress, getBytes, hexlify, sha256 } from 'ethers'
+import { getBytes, hexlify, zeroPadValue } from 'ethers'
 import fs from 'node:fs'
 import path from 'node:path'
-
-const SECRET_KEY = '0xbc005f65414869c630b7ae67836847f46f9083a9cd84af3f01969031309e5c1d'
-const BLOCK_NUMBER = 5690456
-const CONTRACT_ADDRESS = '0xa5D2D96CBB2f4fc2b493C60DB31104D77af9bf92'
-const UNSPENDABLE_ADDRESS = toUnspendableAddress(SECRET_KEY)
-const STORAGE_KEY = getStorageKey(0n, UNSPENDABLE_ADDRESS)
-// const STORAGE_KEY = getStorageKey(0n, '0x97248C0ddC583537a824A7ad5Ee92D5f4525bcAa')
-
-const MAX_DEPTH = 8
-const MAX_TRIE_NODE_LENGTH = 532
-const MAX_ACCOUNT_STATE_LENGTH = 134
-const MAX_STORAGE_VALUE_LENGTH = 32
-
-function toUnspendableAddress(s: string) {
-    return getAddress(hexlify(getBytes(sha256(s)).slice(-20))) as `0x${string}`
-}
+import {
+    UNSPENDABLE_ADDRESS,
+    BLOCK_NUMBER,
+    CONTRACT_ADDRESS,
+    STORAGE_KEY,
+    MAX_DEPTH,
+    MAX_TRIE_NODE_LENGTH,
+    MAX_ACCOUNT_STATE_LENGTH,
+    MAX_STORAGE_VALUE_LENGTH,
+    SECRET_KEY,
+} from './config'
 
 // Safely convert RLP-decoded quantity to bigint
 function rlpToBigInt(hex: string) {
@@ -94,6 +88,7 @@ async function main() {
         MAX_TRIE_NODE_LENGTH,
         MAX_ACCOUNT_STATE_LENGTH,
     )
+    console.log(`state_proof.length = ${processedStateProof.proof.length * 32} bytes`)
     // This is the Prover.toml for state proof
     const stateProverToml = toNargoProverToml(
         Array.from(getBytes(block.stateRoot)),
@@ -157,6 +152,40 @@ async function main() {
     fs.writeFileSync(path.resolve(__dirname, '../circuit/Prover.toml'), proverToml, {
         encoding: 'utf-8',
     })
+    let storageRootOffset = hexlify(new Uint8Array(processedStateProof.value)).lastIndexOf(
+        proof.storageHash.slice(2),
+    ) // dodgy af
+    if (storageRootOffset === -1) {
+        throw new Error('Could not find storageRoot in value')
+    }
+    storageRootOffset = (storageRootOffset - 2) / 2
+    // Sanity
+    console.log(
+        `${hexlify(
+            new Uint8Array(processedStateProof.value).slice(
+                storageRootOffset,
+                storageRootOffset + 32,
+            ),
+        )} ?= ${proof.storageHash}`,
+    )
+    const calldata = {
+        balance: zeroPadValue(hexlify(new Uint8Array(processedStorageProof.value)), 32),
+        storageRootOffset,
+        stateProof: {
+            key: hexlify(new Uint8Array(processedStateProof.key)),
+            proof: hexlify(new Uint8Array(processedStateProof.proof)),
+            depth: processedStateProof.depth,
+            value: hexlify(new Uint8Array(processedStateProof.value)),
+        },
+        storageRoot: proof.storageHash,
+    }
+    fs.writeFileSync(
+        path.resolve(__dirname, './remintCalldata.json'),
+        JSON.stringify(calldata, null, 2),
+        {
+            encoding: 'utf-8',
+        },
+    )
 }
 
 main()

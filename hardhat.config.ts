@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     solidity: {
         version: '0.8.25',
         settings: {
-            viaIR: true,
+            viaIR: false,
             optimizer: {
                 enabled: true,
                 runs: 1000,
@@ -23,11 +23,11 @@ const config: HardhatUserConfig = {
     },
     networks: {
         hardhat: {
-            chainId: 534351,
+            chainId: 11155111,
             forking: {
                 enabled: true,
-                url: process.env.BASE_SEPOLIA_URL as string,
-                blockNumber: 1624600,
+                url: process.env.SEPOLIA_URL as string,
+                blockNumber: 5693769,
             },
             blockGasLimit: 10_000_000,
             accounts: {
@@ -48,36 +48,8 @@ const config: HardhatUserConfig = {
     etherscan: {
         apiKey: {
             mainnet: process.env.ETHERSCAN_API_KEY as string,
-            base: process.env.BASESCAN_API_KEY as string,
-            baseSepolia: process.env.BASESCAN_API_KEY as string,
-            degen: 'abc', // blockscout
+            sepolia: process.env.ETHERSCAN_API_KEY as string,
         },
-        customChains: [
-            {
-                network: 'base',
-                chainId: 8453,
-                urls: {
-                    apiURL: 'https://api.basescan.org/api',
-                    browserURL: 'https://basescan.org',
-                },
-            },
-            {
-                network: 'baseSepolia',
-                chainId: 84532,
-                urls: {
-                    apiURL: 'https://base-sepolia.blockscout.com/api',
-                    browserURL: 'https://sepolia-explorer.base.org',
-                },
-            },
-            {
-                network: 'degen',
-                chainId: 666666666,
-                urls: {
-                    apiURL: 'https://explorer.degen.tips/api',
-                    browserURL: 'https://explorer.degen.tips',
-                },
-            },
-        ],
     },
     contractSizer: {
         alphaSort: true,

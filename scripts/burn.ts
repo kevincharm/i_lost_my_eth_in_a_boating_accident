@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat'
 import { SunkETH__factory } from '../typechain-types'
-import { parseEther } from 'ethers'
-import { CONTRACT_ADDRESS, UNSPENDABLE_ADDRESS } from './config'
+import { BALANCE_TO_BURN, CONTRACT_ADDRESS, UNSPENDABLE_ADDRESS } from './config'
 
 async function main() {
     const [deployer] = await ethers.getSigners()
@@ -9,15 +8,13 @@ async function main() {
     // Wrap
     await sunkETH
         .deposit({
-            value: parseEther('0.001'),
+            value: BALANCE_TO_BURN,
         })
         .then((tx) => tx.wait(1))
     // Burn
-    const tx = await sunkETH
-        .transfer(UNSPENDABLE_ADDRESS, parseEther('0.001'))
-        .then((tx) => tx.wait(1))
+    const tx = await sunkETH.transfer(UNSPENDABLE_ADDRESS, BALANCE_TO_BURN).then((tx) => tx.wait(1))
     console.log(
-        `Deposited and burnt 0.001 ETH to ${UNSPENDABLE_ADDRESS} at block ${tx?.blockNumber}`,
+        `Deposited and burnt ${BALANCE_TO_BURN} ETH to ${UNSPENDABLE_ADDRESS} at block ${tx?.blockNumber}`,
     )
 }
 

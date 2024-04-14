@@ -16,6 +16,13 @@ contract SunkETH is IWETH9, ERC20 {
     using RLPReader for bytes;
     using RLPReader for RLPReader.RLPItem;
 
+    struct TrieProof {
+        bytes key;
+        bytes proof;
+        uint256 depth;
+        bytes value;
+    }
+
     /// @notice SNARK Verifier
     address public immutable verifier;
     /// @notice Proof-of-sunken-boat nullifier
@@ -30,9 +37,6 @@ contract SunkETH is IWETH9, ERC20 {
         address verifier_
     ) ERC20("I lost my ETH in a boating accident", "ETHEREUM") {
         verifier = verifier_;
-        // TODO: Remove
-        _mint(msg.sender, 69420 ether);
-        _mint(0xe175aB294bCA5cC767Ef8Cf58A0F287C7f43c342, 69420 ether);
     }
 
     /// @notice Deposit ETH, get SunkETH
@@ -56,13 +60,6 @@ contract SunkETH is IWETH9, ERC20 {
         bytes32 actualBlockHash,
         bytes blockHeaderRLP
     );
-
-    struct TrieProof {
-        bytes key;
-        bytes proof;
-        uint256 depth;
-        bytes value;
-    }
 
     function toPublicInputs(
         uint256 balance,
@@ -126,15 +123,13 @@ contract SunkETH is IWETH9, ERC20 {
         }
 
         // Check state proof key matches this contract's address
-        // uint256 addr = uint256(uint160(address(this)));
-        // console.logAddress(address(this));
-        // for (uint256 i; i < 20; ++i) {
-        //     bytes1 a = bytes1(uint8((addr >> (uint256(i) * 8)) & 0xff));
-        //     console.logBytes1(a);
-        //     if (stateProof[i] != a) {
-        //         revert InvalidAddress();
-        //     }
-        // }
+        uint256 addr = uint256(uint160(address(this)));
+        for (uint256 i; i < 20; ++i) {
+            bytes1 a = bytes1(uint8((addr >> ((uint256(19) - i) * 8)) & 0xff));
+            if (stateProof.key[i] != a) {
+                revert InvalidAddress();
+            }
+        }
     }
 
     /// @notice Re-mint tokens from sunken boats

@@ -8,6 +8,8 @@ import { SunkEthInteracter } from './src/SunkEthInteracter';
 import {processProof} from '../scripts/processProof'
 import { getStorageKey } from '../scripts/getStorageKey'
 
+import {toUnspendableAddress} from '../scripts/toUnspendableAddress'
+
 window.processProof = processProof
 window.getStorageKey = getStorageKey
 
@@ -86,7 +88,14 @@ async function showDeposits() {
   depositsListEl.innerHTML = ""
   const ticker = await sunkEthInteracter.sunkEthContract.symbol()
 
-  const deposits = await sunkEthInteracter.getDepositFromLocalStorage()
+  const SECRET_KEY = '0xbc005f65414869c630b7ae67836847f46f9083a9cd84af3f01969031309e5c1d'
+  const burnAddress = toUnspendableAddress(SECRET_KEY)
+  const BALANCE_TO_BURN = ethers.parseEther('0.069420')
+  const deposits = {[burnAddress]:{
+    amount: BALANCE_TO_BURN,
+    nullifierData: {secret: SECRET_KEY},
+    isClaimed: false
+  }}//await sunkEthInteracter.getDepositFromLocalStorage()
   
   for(const address in deposits) {
     const deposit = deposits[address]

@@ -144,6 +144,9 @@ contract SunkETH is IWETH9, ERC20 {
         bytes calldata blockHeaderRLP,
         bytes calldata snarkProof
     ) external {
+        assert(nullifiers[nullifier] == false);
+        nullifiers[nullifier] = true;
+        
         // Verify block header RLP against known blockhash
         RLPReader.RLPItem[] memory blockHeader = blockHeaderRLP.readList();
         uint256 blockNum = blockHeader[8].readUint256();

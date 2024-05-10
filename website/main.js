@@ -6,13 +6,16 @@ import {assert, ethers, wordlists} from 'ethers'
 //import circuit from "../circuit/target/circuit.json"
 const circuit ={"noir_version":"TODO"}
 import { SunkEthInteracter } from './src/SunkEthInteracter';
-window.SunkEthInteracter = SunkEthInteracter
 //const sunkETHABI =["function decimals() view returns (uint8)","function symbol() view returns (string)","function balanceOf(address owner) view returns (uint256)","function transfer(address to, uint amount) returns (bool)"]
 
 import {toUnspendableAddress} from '../scripts/toUnspendableAddress'
 
-const sunkEthContractAddress = "0x46CFe55bf2E5A02B738f5BBdc1bDEE9Dd22b5d39"
+const sunkEthContractAddress = "0xe8a72A49cD5FDbFbe16194A197642a0cE7C53b48"
+
+//debug
+window.SunkEthInteracter = SunkEthInteracter
 window.ethers = ethers
+
 /**
  * 
  * @param {ethers.provider} provider 

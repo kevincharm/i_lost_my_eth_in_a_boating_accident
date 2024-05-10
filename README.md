@@ -2,6 +2,12 @@
 
 a sad, short story
 
+## requirements
+The circuit requires more then 40gb in ram to prove. Expanding swap size can work.
+sudo npm install -g nodemon
+run endpoint: `nodemon website/nargoProveEndPoint.js `
+run website: `cd website; yarn run dev`
+
 ## Instructions???
 
 1. Make sure contract address in `scripts/config.ts` is setup correctly

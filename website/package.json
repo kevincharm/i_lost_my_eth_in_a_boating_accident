@@ -1,11 +1,16 @@
 {
   "name": "website",
+  "config" : { 
+    "websitePort" : "5173",
+    "nargoEndPointPort": "5172",
+    "sunkEthContractAddress": "0xe8a72A49cD5FDbFbe16194A197642a0cE7C53b48"
+  },
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "cp ../circuit/target/sunketh_circuit.json src/sunketh_circuit.json; vite --port $npm_package_config_websitePort  & cd ..; nodemon website/nargoProveEndPoint.js",
+    "build": "vite  build",
     "preview": "vite preview"
   },
   "devDependencies": {

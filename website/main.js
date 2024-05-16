@@ -10,7 +10,9 @@ import { SunkEthInteracter } from './src/SunkEthInteracter';
 
 import {toUnspendableAddress} from '../scripts/toUnspendableAddress'
 
-const sunkEthContractAddress = "0xe8a72A49cD5FDbFbe16194A197642a0cE7C53b48"
+// const sunkEthContractAddress = "0xe8a72A49cD5FDbFbe16194A197642a0cE7C53b48"
+import packageConfig from './package.json';
+const sunkEthContractAddress =  packageConfig.config.sunkEthContractAddress
 
 //debug
 window.SunkEthInteracter = SunkEthInteracter

@@ -4,6 +4,9 @@ import cors from 'cors';
 import {spawn, exec} from 'node:child_process';
 import util from 'util'
 import { ethers } from 'ethers';
+import packageConfig from './package.json' assert { type: 'json' };
+const nargoEndPointPort =  packageConfig.config.nargoEndPointPort
+const websitePort =  packageConfig.config.websitePort
 
 export function toHexArrayString(arr) {
     return `[\n${arr.map((v) => `    0x${v.toString(16).padStart(2, '0')}`).join(',\n')}\n]`
@@ -39,14 +42,14 @@ export function toCombinedNargoProverToml(
 const api = express()
 // enabling CORS for some specific origins only. 
 let corsOptions = { 
-    origin : ['http://localhost:5173'], 
+    origin : [`http://localhost:${websitePort}`], 
  } 
    
 api.use(cors(corsOptions))
 api.use(express.json())  
 
 const HOST = 'localhost'
-const PORT = 8888
+const PORT = nargoEndPointPort
 
 
 api.get('/', (req,res) => {

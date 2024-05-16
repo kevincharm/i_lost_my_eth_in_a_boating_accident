@@ -8,8 +8,10 @@ import { getStorageKey } from '../../scripts/getStorageKey'
 import {processProof} from '../../scripts/processProof'
 import { toUnspendableAddress } from '../../scripts/toUnspendableAddress'
 
-import circuit from "../../circuit/target/sunketh_circuit.json"
+import circuit from "./sunketh_circuit.json"//"../../circuit/target/sunketh_circuit.json"
 import sunkETHABI from "../../exported/abi/SunkETH.json"  assert { type: 'json' };
+import packageConfig from '../package.json' assert { type: 'json' };
+const nargoEndPointPort =  packageConfig.config.nargoEndPointPort
 
 export const MAX_DEPTH = 8
 export const MAX_TRIE_NODE_LENGTH = 532
@@ -17,6 +19,8 @@ export const MAX_ACCOUNT_STATE_LENGTH = 134
 export const MAX_STORAGE_VALUE_LENGTH = 32
 
 export class SunkEthInteracter {
+    static nargoEndPointUrl = `http://localhost:${nargoEndPointPort}/prove`
+
     /**
      * 
      * @param {ethers.HexString} input 
@@ -94,7 +98,7 @@ export class SunkEthInteracter {
     static async getProofFromEndPoint({secret, balance, stateProof, storageProof}) {
         const args = {secret, balance, stateProof, storageProof}
         
-        const response = await fetch('http://localhost:8888/prove', {
+        const response = await fetch(SunkEthInteracter.nargoEndPointUrl, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(args)

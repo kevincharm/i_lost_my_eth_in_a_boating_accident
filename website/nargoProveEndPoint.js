@@ -7,6 +7,9 @@ import { ethers } from 'ethers';
 import packageConfig from './package.json' assert { type: 'json' };
 const nargoEndPointPort =  packageConfig.config.nargoEndPointPort
 const websitePort =  packageConfig.config.websitePort
+import {dirname } from "node:path";
+
+const __dirname = dirname(process.argv[1]);
 
 export function toHexArrayString(arr) {
     return `[\n${arr.map((v) => `    0x${v.toString(16).padStart(2, '0')}`).join(',\n')}\n]`
@@ -62,11 +65,11 @@ api.post('/prove',async (req,res) => {
     const stateProof = req.body.stateProof
     const storageProof = req.body.storageProof
     const toml = toCombinedNargoProverToml(secret,balance,stateProof,storageProof)
-    await fs.writeFile("./circuit/Prover.toml", toml)
+    await fs.writeFile(__dirname + "/../circuit/Prover.toml", toml)
     const execProm = util.promisify(exec)
-    const { stdout, stderr } = await execProm('cd circuit; nargo prove');
+    const { stdout, stderr } = await execProm(`cd ${__dirname +"/../circuit"}; nargo prove`);
 
-    const proof = await fs.readFile("./circuit/proofs/sunketh_circuit.proof", "utf-8");
+    const proof = await fs.readFile(__dirname+ "/../circuit/proofs/sunketh_circuit.proof", "utf-8");
 
     res.status(200).json({proof: "0x" + proof})
 })

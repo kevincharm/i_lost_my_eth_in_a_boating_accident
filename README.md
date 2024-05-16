@@ -27,7 +27,7 @@ run website: `cd website; yarn run dev`
 1. install nodemon `yarn global add nodemon`
 
 1. install nargo https://noir-lang.org/docs/getting_started/installation/
-1. set nargo to version 0.25.0 `nargo --version 0.25.0`
+1. set nargo to version 0.25.0 `noirup --version 0.25.0`
 
 1. cd into the website folder `cd website`
 1. install dependencies `yarn install`
